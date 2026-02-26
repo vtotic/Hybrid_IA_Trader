@@ -174,6 +174,14 @@ void OnTick()
    if(lastBarTime == 0) { lastBarTime = currentBarTime; return; } 
    
    ResetDailyCounters(currentBarTime);
+   
+   // --- Session Filter (New Entries and Scanning only during London/NY) ---
+   if(!SessionFilter()) 
+     {
+      lastBarTime = currentBarTime;
+      return;
+     }
+
    PrintFormat("🔍 Scanning [New Bar: %s]. Regime: %s", TimeToString(currentBarTime), EnumToString(RegimeDetector()));
  
    // 2. Risk Management - Max Loss Check
@@ -230,7 +238,6 @@ void OnTick()
      {
       strategyName = "SCALP";
       if(scalpTradesToday >= InpMaxScalpTradesDay) { lastBarTime = currentBarTime; return; }
-      if(!SessionFilter()) { lastBarTime = currentBarTime; return; } // Scalping only in active sessions
       
       ScalpingModule(signalLong, signalShort, sl, tp);
       
@@ -563,12 +570,12 @@ double GetAIProbability(string strategyType)
    PrintFormat("📡 AI Request -> URL: %s | Body: %s", url, json);
    
    char data[];
-   StringToCharArray(json, data, 0, StringLen(json));
+   int len = StringToCharArray(json, data, 0, -1, CP_UTF8);
+   if(len > 1) ArrayResize(data, len - 1); // Remove trailing null terminator
    
    char result[];
    string resultHeaders;
    
-   ResetLastError();
    ResetLastError();
    // Add X-API-Key to headers for security
    string headers = "Content-Type: application/json\r\n" + 
