@@ -20,6 +20,8 @@ input ENUM_TIMEFRAMES signal_tf = PERIOD_CURRENT; // Temporalidad de señal
 input bool   usar_filtro_ruptura = false; // Confirmación de ruptura High/Low
 
 input group "=== Gestión de Riesgo ==="
+input bool   use_fixed_lots   = false;  // Usar Lotaje Fijo (en vez de % Riesgo)
+input double fixed_lots       = 0.1;    // Lote Fijo (Ej: 0.1 BTC)
 input double risk_percent     = 18.0;   // Riesgo por operación (%)
 input int    sl_points        = 2824;   // Stop Loss Inicial (Puntos)
 input ulong  magic_number     = 762422; // Número Mágico
@@ -231,6 +233,16 @@ void ManagePosition()
 //+------------------------------------------------------------------+
 double CalculateLotSize(double sl_dist)
 {
+   double min_lot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double max_lot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double step_lot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+
+   if(use_fixed_lots) 
+   {
+      double lots_val = MathFloor(fixed_lots / step_lot) * step_lot;
+      return MathMax(min_lot, MathMin(max_lot, lots_val));
+   }
+
    if(sl_dist <= 0) return 0;
    
    double balance    = AccountInfoDouble(ACCOUNT_BALANCE);
@@ -241,12 +253,8 @@ double CalculateLotSize(double sl_dist)
    if(tick_val <= 0 || tick_size <= 0) return 0;
    
    double point_value = tick_val / (tick_size / _Point);
-   double lots = risk_money / (sl_dist * point_value);
+   double lots_calc = risk_money / (sl_dist * point_value);
    
-   double min_lot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double max_lot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   double step_lot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   
-   lots = MathFloor(lots / step_lot) * step_lot;
-   return MathMax(min_lot, MathMin(max_lot, lots));
+   lots_calc = MathFloor(lots_calc / step_lot) * step_lot;
+   return MathMax(min_lot, MathMin(max_lot, lots_calc));
 }
