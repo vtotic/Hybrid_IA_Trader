@@ -134,6 +134,19 @@ void OpenTrade(int signal)
    is_partial_closed = false;
    double price = (signal == 1) ? last_tick.ask : last_tick.bid;
    double sl    = (signal == 1) ? price - sl_points * _Point : price + sl_points * _Point;
+
+   // Verificación de Margen Proactiva (para evitar el error "Not enough money")
+   double margin_required;
+   ENUM_ORDER_TYPE order_type = (signal == 1) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   if(OrderCalcMargin(order_type, _Symbol, lots, price, margin_required))
+   {
+      double free_margin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
+      if(margin_required > free_margin)
+      {
+         PrintFormat("❌ Margen Insuficiente para BTC: Necesitas %.2f, Tienes %.2f. ¡Baja el lotaje!", margin_required, free_margin);
+         return;
+      }
+   }
    
    if(signal == 1)
       trade.Buy(lots, _Symbol, price, sl, 0, "Scalp_Buy");
