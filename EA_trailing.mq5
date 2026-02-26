@@ -21,7 +21,7 @@ input bool   usar_filtro_ruptura = false; // Confirmación de ruptura High/Low
 
 input group "=== Gestión de Riesgo ==="
 input bool   use_fixed_lots   = false;  // Usar Lotaje Fijo (en vez de % Riesgo)
-input double fixed_lots       = 0.1;    // Lote Fijo (Ej: 0.1 BTC)
+input double fixed_lots       = 0.01;   // Lote Fijo (Mínimo recomendado: 0.01)
 input double risk_percent     = 18.0;   // Riesgo por operación (%)
 input int    sl_points        = 2824;   // Stop Loss Inicial (Puntos)
 input ulong  magic_number     = 762422; // Número Mágico
